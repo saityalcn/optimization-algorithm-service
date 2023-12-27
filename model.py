@@ -94,36 +94,18 @@ def genetic_algorithm(TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX):
 
   return best_individual
 
-def optimization_model(orders, request):
-    print(request)
+def optimization_model(orders, rawMaterials):
     veriler = []
-    orders = [
-        {"min": 40, "max": 60},
-        {"min": 60, "max": 80},
-        {"min": 70, "max": 90},
-        {"min": 40, "max": 60},
-        {"min": 60, "max": 80},
-        {"min": 70, "max": 90},
-        {"min": 40, "max": 60},
-        {"min": 60, "max": 80},
-        {"min": 70, "max": 90},
-        {"min": 40, "max": 60},
-        {"min": 60, "max": 80},
-        {"min": 70, "max": 90},
-        {"min": 40, "max": 60},
-        {"min": 60, "max": 80},
-        {"min": 70, "max": 90},
-        {"min": 40, "max": 60},
-        {"min": 60, "max": 80},
-        {"min": 70, "max": 90},
-    ]
 
+    # quantity 100 denince genetik algoritma çıktılarında her bir field - age hariç - 100 ile çarpılacak.
+    
     for order in orders:
         veriler.append(genetic_algorithm(order["min"], order["max"]))
 
-    print(len(veriler))
-    print(veriler[1])
-    print(veriler[2])
+    #print(len(veriler))
+
+    for veri in veriler: 
+        print(veri)
 
     # Lineer Programlama Modeli Oluştur
     model = LpProblem(name="Veri_Optimizasyon", sense=LpMaximize)
@@ -131,17 +113,7 @@ def optimization_model(orders, request):
     secenekler = [LpVariable(f"veri_{i}", cat="Binary") for i in range(len(veriler))]
 
     # Parametreler için maksimum kısıtları ekleyin
-    max_values = {
-        'cement': 10000,
-        'slag': 10000,
-        'ash': 10000,
-        'water': 10000,
-        'superplastic': 10000,
-        'coarseagg': 10000,
-        'fineagg': 10000,
-        'age': 10000
-    }
-
+    max_values = rawMaterials
     # Hedef Fonksiyonu (örneğin, toplam hedefi maksimize etmeye çalışıyoruz)
     model += lpSum(secenekler[i] for i in range(len(veriler)))
 

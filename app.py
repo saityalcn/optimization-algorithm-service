@@ -18,16 +18,9 @@ def indexRoute():
 @app.route("/optimization", methods=['POST'])
 @cross_origin()
 def chatRoute():
-    res = optimization_model(request.json['orders'], request.json['abc'])
-    """
-    try:
-
-    except Exception as e:
-        res ="Sorry. I can't understand you. Please tell me different way. :("
-        res = e
-    """
-        
-    return  {'res': res}
+    print(request.json['orders'])
+    print(request.json['rawMaterials'])
+    return optimization_model(request.json['orders'], request.json['rawMaterials'])
 
 if __name__ == '__main__':
     # Debug modunu etkinleştirme
