@@ -9,7 +9,9 @@ from functools import partial
 from pulp import LpMaximize, LpProblem, LpVariable, lpSum
 import joblib
 
-regression_model = joblib.load('regression_model.joblib')
+linear_regression_model = joblib.load('linear_regression_model.joblib')
+random_forest_regressor= joblib.load('random_forest_model.joblib')
+
 
 param_ranges = {
     'cement': (102, 540),
@@ -29,9 +31,15 @@ def initialize_parameters():
 
     return initial_parameters
 
-def calculate_strength(sample_input):
-  reshaped_array = pd.DataFrame([sample_input])
-  return regression_model.predict(reshaped_array)[0]
+def calculate_strength(sample_input, regressinModelKey):
+    reshaped_array = pd.DataFrame([sample_input])
+    print(regressinModelKey)
+
+    if(regressinModelKey == "linearRegressor"):
+        return linear_regression_model.predict(reshaped_array)[0]
+
+    else:
+        return random_forest_regressor.predict(reshaped_array)[0]
 
 # Genetik algoritma parametreleri
 POPULATION_SIZE = 50
@@ -44,20 +52,20 @@ def create_individual(param_ranges):
     return {param: random.uniform(param_range[0], param_range[1]) for param, param_range in param_ranges.items()}
 
 # Fitness fonksiyonu
-def evaluate(individual, TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX):
+def evaluate(individual, TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX, regressinModelKey):
     # Burada, veri setine göre strength hesaplaması yapılmalıdır.
-    calculated_strength = calculate_strength(individual)
+    calculated_strength = calculate_strength(individual, regressinModelKey)
 
     # Hedef aralığa uygunluk kontrolü
     target_fitness = 1.0 - abs(calculated_strength - TARGET_STRENGTH_MIN) / (TARGET_STRENGTH_MAX - TARGET_STRENGTH_MIN)
 
     return target_fitness
 
-def genetic_algorithm(TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX):
+def genetic_algorithm(TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX, regressinModelKey):
   population = [create_individual(param_ranges) for _ in range(POPULATION_SIZE)]
 
   for generation in range(GENERATIONS):
-      fitness_values = [evaluate(individual, TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX) for individual in population]
+      fitness_values = [evaluate(individual, TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX, regressinModelKey) for individual in population]
 
       elite_indices = sorted(range(POPULATION_SIZE), key=lambda i: fitness_values[i], reverse=True)[:int(0.1 * POPULATION_SIZE)]
       elites = [population[i] for i in elite_indices]
@@ -82,29 +90,29 @@ def genetic_algorithm(TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX):
 
       population = new_population
 
-  evaluate_with_args = partial(evaluate, TARGET_STRENGTH_MIN=TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX=TARGET_STRENGTH_MAX)
+  evaluate_with_args = partial(evaluate, TARGET_STRENGTH_MIN=TARGET_STRENGTH_MIN, TARGET_STRENGTH_MAX=TARGET_STRENGTH_MAX, regressinModelKey=regressinModelKey)
   best_individual = max(population, key=evaluate_with_args)
 
   return best_individual
 
-def gradient_descent(initial_parameters, learning_rate, max_iterations, target_strength_range):
+def gradient_descent(initial_parameters, learning_rate, max_iterations, target_strength_range, regressinModelKey):
     current_parameters = {key: value for key, value in initial_parameters.items()}
 
     target_strength_min, target_strength_max = target_strength_range
 
     for iteration in range(max_iterations):
-        gradient = calculate_gradient(current_parameters, target_strength_min)
+        gradient = calculate_gradient(current_parameters, target_strength_min, regressinModelKey)
 
         for parameter in current_parameters:
             current_parameters[parameter] -= learning_rate * gradient[parameter]
 
-        current_strength = calculate_strength(current_parameters)
+        current_strength = calculate_strength(current_parameters, regressinModelKey)
         if target_strength_min <= current_strength <= target_strength_max:
             break
 
     return current_parameters
 
-def calculate_gradient(parameters, target_strength):
+def calculate_gradient(parameters, target_strength, regressinModelKey):
     epsilon = 1e-6  # Küçük bir epsilon değeri
     gradient = {}
 
@@ -112,10 +120,10 @@ def calculate_gradient(parameters, target_strength):
         original_value = parameters[parameter]
 
         parameters[parameter] = original_value + epsilon
-        strength_plus_epsilon = calculate_strength(parameters)
+        strength_plus_epsilon = calculate_strength(parameters, regressinModelKey)
 
         parameters[parameter] = original_value - epsilon
-        strength_minus_epsilon = calculate_strength(parameters)
+        strength_minus_epsilon = calculate_strength(parameters, regressinModelKey)
 
         gradient[parameter] = (strength_plus_epsilon - strength_minus_epsilon) / (2 * epsilon)
 
@@ -123,13 +131,13 @@ def calculate_gradient(parameters, target_strength):
 
     return gradient
 
-def gradient_descent_algorithm(target_strength_min, target_strength_max):
+def gradient_descent_algorithm(target_strength_min, target_strength_max, regressinModelKey):
   initial_parameters = initialize_parameters()
   target_strength_range = (target_strength_min, target_strength_max)
   learning_rate = 0.01
   max_iterations = 1000
 
-  return gradient_descent(initial_parameters, learning_rate, max_iterations, target_strength_range)
+  return gradient_descent(initial_parameters, learning_rate, max_iterations, target_strength_range, regressinModelKey)
 
 def dynamic_programming_algorithm(orders, raw_materials):
   maxOfRawMaterials = max(raw_materials.values())
@@ -176,22 +184,26 @@ def linear_programming_algorithm(veriler, max_values):
 
     return [veriler[i] for i in range(len(veriler)) if secenekler[i].value() == 1]
 
-
-
-# for item in dynamic_programming_algorithm(veriler, max_values):
-
-def optimization_model(orders, rawMaterials, algorithmKey):
+def optimization_model(orders, rawMaterials, algorithmKey, operationsResearchMethodKey, regressinModelKey):
     veriler = []
+    selected_data = []
 
     # quantity 100 denince genetik algoritma çıktılarında her bir field - age hariç - 100 ile çarpılacak.
     
     for order in orders:
         if(algorithmKey == "genetic"):
-            veriler.append(genetic_algorithm(order["min"], order["max"]))
+            veriler.append(genetic_algorithm(order["min"], order["max"], regressinModelKey))
 
         elif(algorithmKey == "gradDescent"):
-            veriler.append(gradient_descent_algorithm(order["min"], order["max"]))
+            veriler.append(gradient_descent_algorithm(order["min"], order["max"], regressinModelKey))
 
-    selected_data = linear_programming_algorithm(veriler, raw_materials)
+    
+    if(operationsResearchMethodKey == "dynamicProgramming"):
+        selected_data = dynamic_programming_algorithm(veriler, rawMaterials)
+
+    else:
+        selected_data = linear_programming_algorithm(veriler, rawMaterials)
+
+    print("END")
 
     return selected_data

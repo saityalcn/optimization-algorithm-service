@@ -20,7 +20,7 @@ def indexRoute():
 def chatRoute():
     print(request.json['orders'])
     print(request.json['rawMaterials'])
-    return optimization_model(request.json['orders'], request.json['rawMaterials'],  request.json['algorithmKey'])
+    return optimization_model(request.json['orders'], request.json['rawMaterials'],  request.json['algorithmKey'], request.json['operationsResearchMethodKey'], request.json['regressionModelKey'])
 
 if __name__ == '__main__':
     # Debug modunu etkinleştirme
