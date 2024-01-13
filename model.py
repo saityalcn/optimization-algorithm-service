@@ -139,36 +139,73 @@ def gradient_descent_algorithm(target_strength_min, target_strength_max, regress
   return gradient_descent(initial_parameters, learning_rate, max_iterations, target_strength_range, regressinModelKey)
 
 def dynamic_programming_algorithm(orders, raw_materials):
-  maxOfRawMaterials = max(raw_materials.values())
-  dp_matrix = [[0] * (maxOfRawMaterials + 1) for _ in range(len(orders) + 1)]
+  dp_dict = {
+    'cement': None,
+    'slag': None,
+    'ash': None,
+    'water': None,
+    'superplastic': None,
+    'coarseagg': None,
+    'fineagg': None,
+    'age': None
+  }
+
+  result_dict = {
+    'cement': None,
+    'slag': None,
+    'ash': None,
+    'water': None,
+    'superplastic': None,
+    'coarseagg': None,
+    'fineagg': None,
+    'age': None
+  }
+
   weights = []
   values = []
 
-  weights.append(0)
-  values.append(0)
+  order_raw_material_dict = {}
 
-  for i in range(1, len(orders)+1):
-    weights.append(max(orders[i-1].values()))
-    values.append(1)
+  for my_dict in orders:
+    for key, value in my_dict.items():
+      if key not in order_raw_material_dict:
+          order_raw_material_dict[key] = []
 
-  for i in range(1, len(orders) + 1):
-    for j in range(1, maxOfRawMaterials + 1):
-      if weights[i - 1] <= j:
-        dp_matrix[i][j] = max(dp_matrix[i - 1][j], values[i - 1] + dp_matrix[i - 1][math.ceil(j - weights[i - 1])])
-      else:
-        dp_matrix[i][j] = dp_matrix[i - 1][j]
+      order_raw_material_dict[key].append(value)
 
-  selected_items = []
-  i, j = len(orders), maxOfRawMaterials
-  while i > 0 and j > 0:
-    if dp_matrix[i][j] != dp_matrix[i - 1][j]:
-        selected_items.append(i - 1)
-        j -= math.ceil(weights[i - 1])
 
-    i -= 1
 
-  selected_items.reverse()
-  return [orders[i] for i in selected_items]
+  for key in dp_dict:
+    weights = order_raw_material_dict[key]
+    dp_matrix = [[0] * (raw_materials[key] + 1) for _ in range(len(orders) + 1)]
+
+    maxOfRawMaterials = raw_materials[key]
+
+    for i in range(1, len(orders)+1):
+      values.append(1)
+
+    for i in range(1, len(orders) + 1):
+      for j in range(1, maxOfRawMaterials + 1):
+        if weights[i - 1] <= j:
+          dp_matrix[i][j] = max(dp_matrix[i - 1][j], values[i - 1] + dp_matrix[i - 1][math.ceil(j - weights[i - 1])])
+
+        else:
+          dp_matrix[i][j] = dp_matrix[i - 1][j]
+
+    selected_items = []
+    i, j = len(orders), maxOfRawMaterials
+    while i > 0 and j > 0:
+      if dp_matrix[i][j] != dp_matrix[i - 1][j]:
+          selected_items.append(i - 1)
+          j -= math.ceil(weights[i - 1])
+
+      i -= 1
+
+    selected_items.reverse()
+    result_dict[key] = selected_items
+
+  common_elements = set(result_dict[next(iter(result_dict))]).intersection(*result_dict.values())
+  return [orders[i] for i in common_elements]
 
 def linear_programming_algorithm(veriler, max_values):
     model = LpProblem(name="Veri_Optimizasyon", sense=LpMaximize)
