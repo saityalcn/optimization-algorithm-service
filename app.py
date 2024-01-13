@@ -13,13 +13,11 @@ CORS(app)
 @app.route("/", methods=['POST', 'GET'])
 @cross_origin()
 def indexRoute():
-    return chatFunc("abcabc")
+    return "abcabc"
 
 @app.route("/optimization", methods=['POST'])
 @cross_origin()
 def chatRoute():
-    print(request.json['orders'])
-    print(request.json['rawMaterials'])
     return optimization_model(request.json['orders'], request.json['rawMaterials'],  request.json['algorithmKey'], request.json['operationsResearchMethodKey'], request.json['regressionModelKey'])
 
 if __name__ == '__main__':

@@ -33,7 +33,6 @@ def initialize_parameters():
 
 def calculate_strength(sample_input, regressinModelKey):
     reshaped_array = pd.DataFrame([sample_input])
-    print(regressinModelKey)
 
     if(regressinModelKey == "linearRegressor"):
         return linear_regression_model.predict(reshaped_array)[0]
@@ -187,8 +186,6 @@ def linear_programming_algorithm(veriler, max_values):
 def optimization_model(orders, rawMaterials, algorithmKey, operationsResearchMethodKey, regressinModelKey):
     veriler = []
     selected_data = []
-
-    # quantity 100 denince genetik algoritma çıktılarında her bir field - age hariç - 100 ile çarpılacak.
     
     for order in orders:
         if(algorithmKey == "genetic"):
@@ -203,7 +200,5 @@ def optimization_model(orders, rawMaterials, algorithmKey, operationsResearchMet
 
     else:
         selected_data = linear_programming_algorithm(veriler, rawMaterials)
-
-    print("END")
 
     return selected_data
